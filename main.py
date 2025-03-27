@@ -2,6 +2,22 @@ import psutil
 import time
 import threading
 import tkinter as tk
+import os
+
+CONFIG_FILE = "config.json"
+
+if os.path.exists(CONFIG_FILE):
+    with open(CONFIG_FILE, "r") as file:
+        selected_unit = file.read().strip()
+else:
+    selected_unit = "KBps"
+    with open(CONFIG_FILE, "w") as file:
+        file.write(selected_unit)
+
+VALID_UNITS = ["Kbps", "Mbps", "Gbps", "KBps", "MBps", "GBps"]
+if selected_unit not in VALID_UNITS:
+    selected_unit = "KBps" 
+
 
 def get_speed(unit="KBps"):
     units = {
@@ -11,7 +27,7 @@ def get_speed(unit="KBps"):
     divisor = units.get(unit, 1024)
 
     old_data = psutil.net_io_counters()
-    time.sleep(1)
+    time.sleep(1)  
     new_data = psutil.net_io_counters()
 
     if unit in ["Kbps", "Mbps", "Gbps"]:
@@ -23,12 +39,14 @@ def get_speed(unit="KBps"):
 
     return round(download_speed, 2), round(upload_speed, 2)
 
+
 def update_speed():
     while True:
         down, up = get_speed(selected_unit)
         download_label.config(text=f"↓ {down:.2f} {selected_unit}")
         upload_label.config(text=f"↑ {up:.2f} {selected_unit}")
         time.sleep(1)
+
 
 def on_press(event):
     global start_x, start_y
@@ -40,20 +58,14 @@ def on_drag(event):
     y = root.winfo_y() + (event.y - start_y)
     root.geometry(f"+{x}+{y}")
 
-valid_units = ["Kbps", "Mbps", "Gbps", "KBps", "MBps", "GBps"]
-selected_unit = input("Choose unit (Kbps, Mbps, Gbps, KBps, MBps, GBps): ").strip()
-
-if selected_unit not in valid_units:
-    print("Invalid unit! Defaulting to KBps.")
-    selected_unit = "KBps"
 
 root = tk.Tk()
 root.title("Floating Net Speed Monitor")
 root.geometry("200x50")
-root.attributes("-topmost", True)
-root.attributes("-alpha", 0.7)
+root.attributes("-topmost", True)   
+root.attributes("-alpha", 0.7)     
 root.configure(bg="black")
-root.overrideredirect(True)
+root.overrideredirect(True)        
 
 download_label = tk.Label(root, text="↓ 0.00 KBps", font=("Arial", 12, "bold"), fg="white", bg="black")
 download_label.pack()
@@ -70,4 +82,4 @@ thread.start()
 try:
     root.mainloop()
 except KeyboardInterrupt:
-    print(f"Monitoring Ended by user.")
+    print("\nMonitoring Ended by User.")
