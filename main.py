@@ -1,25 +1,14 @@
-import psutil
+import os
 import time
+import psutil
 import threading
 import tkinter as tk
-import os
+from settings import open_settings, load_config
 
-CONFIG_FILE = "config.json"
+config = load_config()
 
-if os.path.exists(CONFIG_FILE):
-    with open(CONFIG_FILE, "r") as file:
-        selected_unit = file.read().strip()
-else:
-    selected_unit = "KBps"
-    with open(CONFIG_FILE, "w") as file:
-        file.write(selected_unit)
-
-VALID_UNITS = ["Kbps", "Mbps", "Gbps", "KBps", "MBps", "GBps"]
-if selected_unit not in VALID_UNITS:
-    selected_unit = "KBps" 
-
-
-def get_speed(unit="KBps"):
+def get_speed():
+    unit = config["unit"]
     units = {
         "Kbps": 1024, "Mbps": 1024**2, "Gbps": 1024**3,
         "KBps": 1024, "MBps": 1024**2, "GBps": 1024**3
@@ -27,7 +16,7 @@ def get_speed(unit="KBps"):
     divisor = units.get(unit, 1024)
 
     old_data = psutil.net_io_counters()
-    time.sleep(1)  
+    time.sleep(1)
     new_data = psutil.net_io_counters()
 
     if unit in ["Kbps", "Mbps", "Gbps"]:
@@ -39,14 +28,19 @@ def get_speed(unit="KBps"):
 
     return round(download_speed, 2), round(upload_speed, 2)
 
-
 def update_speed():
     while True:
-        down, up = get_speed(selected_unit)
-        download_label.config(text=f"↓ {down:.2f} {selected_unit}")
-        upload_label.config(text=f"↑ {up:.2f} {selected_unit}")
+        down, up = get_speed()
+        download_label.config(text=f"↓ {down:.2f} {config['unit']}", fg=config["text_color"])
+        upload_label.config(text=f"↑ {up:.2f} {config['unit']}", fg=config["text_color"])
         time.sleep(1)
 
+def update_ui():
+    global config
+    config = load_config()  # Reload updated settings
+    root.attributes("-alpha", config["background_opacity"])  # Apply opacity
+    download_label.config(fg=config["text_color"])
+    upload_label.config(fg=config["text_color"])
 
 def on_press(event):
     global start_x, start_y
@@ -58,24 +52,33 @@ def on_drag(event):
     y = root.winfo_y() + (event.y - start_y)
     root.geometry(f"+{x}+{y}")
 
+def show_context_menu(event):
+    context_menu.tk_popup(event.x_root, event.y_root)
 
 root = tk.Tk()
 root.title("Floating Net Speed Monitor")
-root.geometry("200x50")
-root.attributes("-topmost", True)   
-root.attributes("-alpha", 0.7)     
+root.geometry("200x60")
+root.attributes("-topmost", True)
+root.attributes("-alpha", config["background_opacity"])  # Apply user-defined opacity
 root.configure(bg="black")
-root.overrideredirect(True)        
+root.overrideredirect(True)
 
-download_label = tk.Label(root, text="↓ 0.00 KBps", font=("Arial", 12, "bold"), fg="white", bg="black")
+download_label = tk.Label(root, text="↓ 0.00 KBps", font=("Arial", 12, "bold"), fg=config["text_color"], bg="black")
 download_label.pack()
 
-upload_label = tk.Label(root, text="↑ 0.00 KBps", font=("Arial", 12, "bold"), fg="white", bg="black")
+upload_label = tk.Label(root, text="↑ 0.00 KBps", font=("Arial", 12, "bold"), fg=config["text_color"], bg="black")
 upload_label.pack()
+
+# Context menu (Right-click)
+context_menu = tk.Menu(root, tearoff=0)
+context_menu.add_command(label="Settings", command=lambda: open_settings(root, update_ui))
+context_menu.add_command(label="Close", command=root.quit)
 
 root.bind("<ButtonPress-1>", on_press)
 root.bind("<B1-Motion>", on_drag)
+root.bind("<Button-3>", show_context_menu)  # Right-click to open menu
 
+# Start speed monitoring thread
 thread = threading.Thread(target=update_speed, daemon=True)
 thread.start()
 
