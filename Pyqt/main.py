@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 import time
@@ -6,9 +7,14 @@ import threading
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QMenu
 from PyQt6.QtGui import QAction, QMouseEvent
 from PyQt6.QtCore import Qt, QPoint
-from Pyqt.settings import SettingsWindow
+from settings import SettingsWindow # If import is throwing error try the commented one(while running locally)
+# from Pyqt.settings import SettingsWindow # use this (While running the exe)
 
-CONFIG_FILE = "config.json"
+CONFIG_DIR = os.path.join(os.getenv("TEMP"), "YourApp")
+CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
+
+# Ensure the directory exists
+os.makedirs(CONFIG_DIR, exist_ok=True)
 
 class MainWindow(QWidget):
     def __init__(self):

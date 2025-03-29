@@ -1,5 +1,5 @@
 {
-    "unit": "Mbps",
-    "background_opacity": 0.0,
+    "unit": "MBps",
+    "background_opacity": 0.7,
     "text_color": "#00aa00"
 }

@@ -3,7 +3,8 @@ import time
 import psutil
 import threading
 import tkinter as tk
-from settings import open_settings, load_config
+from settings import open_settings, load_config # If import is throwing error try the commented one(while running locally)
+from Tkinkter.settings import open_settings, load_config # use this (While running the exe)
 
 config = load_config()
 
